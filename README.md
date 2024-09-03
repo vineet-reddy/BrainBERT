@@ -1,48 +1,56 @@
-# BrainBERT
+# Seizure Detection Pipeline with BrainBERT
 
-BrainBERT is an modeling approach for learning self-supervised representations of intracranial electrode data. See [paper](https://arxiv.org/abs/2302.14367) for details.
+This repository contains a modified version of the BrainBERT model, fine-tuned for seizure detection. The original BrainBERT model can be found [here](https://github.com/czlwang/BrainBERT).
 
-We provide the training pipeline below.
+The `seizure` folder includes scripts for processing Stereo-Electroencephalography (sEEG) data, generating embeddings, and training a logistic regression model to detect seizures.
 
-The trained weights have been released (see below) and pre-training data is available upon request.
+## Pipeline Overview
 
-## Installation
-Requirements:
-- pytorch >= 1.12.1
-- [pytorch gradual warmup scheduler](https://github.com/ildoonet/pytorch-gradual-warmup-lr)
+1. **Process sEEG data**: Extract relevant channels, filter data, and create 5-second epochs.
+2. **Generate labels**: Label epochs as seizure or non-seizure based on event files.
+3. **Generate embeddings**: Use BrainBERT to generate embeddings from sEEG data.
+4. **Train and evaluate model**: Use logistic regression to classify embeddings and assess performance.
 
-```
-pip install -r requirements.txt
-```
+## Scripts
 
-### Input
-It is expected that the input is intracranial electrode data that has been Laplacian re-referenced.
+### 1. Demo Notebook
+**File:** `brainbert_embed_logreg_analysis.ipynb`
 
-## Using BrainBERT embeddings
-- pretrained weights are available [here](https://drive.google.com/file/d/14ZBOafR7RJ4A6TsurOXjFVMXiVH6Kd_Q/view?usp=sharing)
-- see `notebooks/demo.ipynb` for an example input and example embedding
+- Loads BrainBERT.
+- Converts sEEG data to spectrograms using STFT.
+- Generates and saves embeddings and labels.
 
-## Upstream
-### BrainBERT pre-training data
-The data directory should be structured as:
-```
-/pretrain_data
-  |_manifests
-    |_manifests.tsv  <-- each line contains the path to the example and the length
-  |_<subject>
-    |_<trial>
-      |_<example>.npy
-```
+### 2. SEEG Data Processing
+**File:** `preprocess_edf_pipeline.ipynb`
 
-### BrainBERT pre-training
-```
-python3 run_train.py +exp=spec2vec ++exp.runner.device=cuda ++exp.runner.multi_gpu=True \
-  ++exp.runner.num_workers=64 +data=masked_spec +model=masked_tf_model_large \
-  +data.data=/path/to/data ++data.val_split=0.01 +task=fixed_mask_pretrain.yaml \
-  +criterion=pretrain_masked_criterion +preprocessor=stft ++data.test_split=0.01 \
-  ++task.freq_mask_p=0.05 ++task.time_mask_p=0.05 ++exp.runner.total_steps=500000
-```
-Example parameters:
-```
-/path/to/data = /storage/user123/self_supervised_seeg/pretrain_data/manifests
-```
+- Filters sEEG channels, removes artifacts, and resamples to 256 Hz.
+- Applies notch filter to remove 60 Hz noise.
+- Segments data into 5-second epochs.
+- Saves processed data as `.npy` files.
+
+### 3. Label Creation
+**File:** `create_labels.ipynb`
+
+- Reads event files for seizure onset/offset.
+- Labels 5-second epochs (1 for seizure, 0 for non-seizure).
+
+### 4. Logistic Regression Model Training
+**File:** `train_brainbert_logreg.ipynb`
+
+- Loads BrainBERT embeddings and labels.
+- Splits data into training/testing sets.
+- Trains and saves the logistic regression model.
+
+### 5. Model Evaluation and Visualization
+**File:** `brainbert_embed_logreg_analysis.ipynb`
+
+- Evaluates model performance on the test set.
+- Generates confusion matrix and ROC curve.
+
+## Results
+
+Running the evaluation script provides:
+
+- Model accuracy on training and test sets.
+- Confusion matrix for classification performance.
+- ROC curve for assessing model's seizure detection ability.
