@@ -16,9 +16,10 @@ The `seizure` folder includes scripts for processing Stereo-Electroencephalograp
 ### 1. Demo Notebook
 **File:** `brainbert_embed_logreg_analysis.ipynb`
 
-- Loads BrainBERT.
-- Converts sEEG data to spectrograms using STFT.
-- Generates and saves embeddings and labels.
+- This notebook is an updated and re-annotated version of the original demo notebook located at `BrainBERT/notebooks/demo.ipynb`. It performs the following tasks:
+  - Loads the BrainBERT model.
+  - Converts sEEG data into spectrograms using the Short-Time Fourier Transform (STFT).
+  - Generates embeddings from the spectrograms and saves both the embeddings and their corresponding labels.
 
 ### 2. SEEG Data Processing
 **File:** `preprocess_edf_pipeline.ipynb`
