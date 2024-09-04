@@ -1,6 +1,7 @@
 # Seizure Detection Pipeline with BrainBERT
 
-This repository contains a modified version of the BrainBERT model, fine-tuned for seizure detection. The original BrainBERT model can be found [here](https://github.com/czlwang/BrainBERT).
+This repository contains a modified version of the BrainBERT model, fine-tuned for seizure detection. The original BrainBERT model can be found [here](https://github.com/czlwang/BrainBERT). This is the [link to the original BrainBERT paper](https://arxiv.org/abs/2302.14367).
+
 
 The `seizure` folder includes scripts for processing Stereo-Electroencephalography (sEEG) data, generating embeddings, and training a logistic regression model to detect seizures.
 
