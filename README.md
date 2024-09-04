@@ -16,7 +16,7 @@ The `seizure` folder includes scripts for processing Stereo-Electroencephalograp
 ## Scripts
 
 ### 1. Demo Notebook
-**File:** `brainbert_embed_logreg_analysis.ipynb`
+**File:** `demo_brainbert_annot.ipynb`
 
 - This notebook is an updated and re-annotated version of the original demo notebook located at `BrainBERT/notebooks/demo.ipynb`. It performs the following tasks:
   - Loads the BrainBERT model.
