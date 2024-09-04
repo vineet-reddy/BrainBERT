@@ -4,6 +4,8 @@ This repository contains a modified version of the BrainBERT model, fine-tuned f
 
 The `seizure` folder includes scripts for processing Stereo-Electroencephalography (sEEG) data, generating embeddings, and training a logistic regression model to detect seizures.
 
+***Please note that this project is a work in progress!***
+
 ## Pipeline Overview
 
 1. **Process sEEG data**: Extract relevant channels, filter data, and create 5-second epochs.
