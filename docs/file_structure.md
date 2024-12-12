@@ -1,165 +1,118 @@
 # BrainBERT Repository Structure
 
-This document provides a concise overview of the BrainBERT repository layout, clarifying which components are author-specific and which are essential for extending the BrainBERT architecture. The structure and conventions are inspired by documentation standards commonly found at large tech companies.
+BrainBERT is a self-supervised learning framework for intracranial electrode data. This document outlines the repository structure and provides guidance for extending its capabilities.
 
-## Overview
+## Core Components
 
-**Goal:** BrainBERT learns self-supervised representations from intracranial electrode data (ECoG). This repository is organized for modularity and clarity, using Hydra for configuration and well-defined directories for each component of the pipeline.
-
-**Key Concepts:**
-- **Configuration**: Managed via Hydra in `/conf`
-- **Data Processing & Loading**: Defined in `/data` and `/datasets`
-- **Models**: Found in `/models`
-- **Preprocessors**: Signal transformations in `/preprocessors`
-- **Pretraining & Tasks**: Scripts and utilities in `/pretrain` and `/tasks`
-- **Utilities & Tests**: Shared code in `/util`, tests in `/testing`
-- **Author-Specific vs. General Files**: Certain files contain author's domain assumptions (e.g., electrode naming conventions) and should be adapted before reuse
-
-## Core Directories
-
-### `/conf`
-**Purpose:** Central configuration using Hydra. Organizes model, data, preprocessor, and experiment settings.
-
-**Key Subdirectories:**
-- `conf/model/`: Model architecture definitions
-- `conf/data/`: Dataset and data-loading parameters
-- `conf/preprocessor/`: Signal preprocessing configs
-- `conf/exp/`: Training and resource allocation settings
-
-**Usage Example:**
-```bash
-python run_train.py +exp=spec2vec +model=masked_tf_model_large
-python run_train.py +exp=spec2vec ++model.hidden_dim=512
-```
-
-**Key Takeaway:** If expanding BrainBERT, adjust model, data, and experiment configs here.
-
-### `/data`
-**Purpose:** Core data processing pipeline for ECoG data: transforming raw recordings (e.g., EDF) into manageable formats (e.g., HDF5), organizing trials, and preparing datasets for training.
-
-**Key Files:**
-- `edf2h5.py`, `h5_data.py`, `h5_data_reader.py`: Convert and load data from EDF to HDF5
-- `trial_data.py`, `trial_data_reader.py`: Manage trial-based data loading
-- `create_data_dirs.py`: Sets up directory structures
-- `write_data_to_disk.py`: Persists processed data
-
-**Author-Specific Files:**
-- `corrupted_elec.json`
-- `test_split_trials.json`
-- `speech_nonspeech_subject_data.py`
-
-These contain subject- or electrode-specific assumptions and splits. Modify or remove these when adapting BrainBERT to new datasets.
-
-**If Expanding BrainBERT:**
-You only need to ensure your new data fits the existing data loading formats (`subject_data.py`, `trial_data_reader.py`) and adjust the configs. The rest can remain unchanged.
-
-### `/datasets`
-**Purpose:** Defines dataset classes that integrate processed data into model-ready formats, including masked pretraining datasets and fine-tuning sets.
-
-**Key Files:**
-- `base_tf_dataset.py`: Base dataset class
-- `masked_tf_dataset.py`: Masked dataset for self-supervised pretraining
-- `finetuning_datasets.py`: Datasets for downstream tasks
-
-**Author-Specific Notes:**
-Certain electrode or subject assumptions in `single_subject_all_electrode.py` and `finetuning_datasets.py` may need updates.
-
-**If Expanding BrainBERT:**
-Focus on `base_tf_dataset.py` and `masked_tf_dataset.py` for new datasets. Adjust `finetuning_datasets.py` as needed for new tasks.
-
-### `/models`
-**Purpose:** Houses the BrainBERT models and related architectures.
-
-**Key Files:**
-- `masked_tf_model.py`: Core BrainBERT masked transformer model
-- `base_model.py`: Base class for implementing new models
-- `transformer_encoder_input.py`: Transformer encoder for ECoG signals
-
-**Author-Specific Notes:**
-`seeg_wav2vec.py` and certain baseline models assume specific data formats. These can be adapted if your domain differs.
-
-**If Expanding BrainBERT:**
-Start with `masked_tf_model.py` for the main architecture and tweak model configs in `/conf/model/`.
-
-### `/preprocessors`
-**Purpose:** Performs signal transformations (e.g., STFT, wavelet transforms).
-
-**Key Files:**
-- `stft.py`, `morelet_preprocessor.py`, `superlet_preprocessor.py`: Time-frequency transformations
-- `wav_preprocessor.py`: Raw waveform preprocessing
-
-**Author-Specific Notes:**
-Frequency bands or normalization strategies might be tailored to a specific dataset.
-
-**If Expanding BrainBERT:**
-You may only need to add or adjust a preprocessor if using new signal modalities.
-
-### `/pretrain`
-**Purpose:** Includes scripts and methods for pretraining BrainBERT using self-supervised strategies like masking.
-
-**Key Files:**
-- `spec2vec/spec2vec.py`: Core pretraining script leveraging spectrogram-to-vector approaches
-
-**Author-Specific Notes:**
-Masking strategies and augmentation assumptions may be domain-specific.
-
-**If Expanding BrainBERT:**
-Customize pretraining tasks or objectives here. No need to reinvent the entire pipeline—just plug into existing configs and datasets.
-
-### Other Directories
-- `/schedulers`: Learning rate schedulers
-- `/tasks`: Task definitions for training/evaluation
-- `/testing`: Unit/integration tests
-- `/util`: Shared utilities
-
-### Root Files
-- `requirements.txt`: Project dependencies
-- `run_train.py`: Main training entry point
-- `run_tests.py`: Executes test suite
-- `runner.py`: Orchestrates the training loop
-
-## What to Modify if Expanding BrainBERT
-
-### Data Adaptation
-1. Update or replace author-specific data files (`corrupted_elec.json`, `test_split_trials.json`, `speech_nonspeech_subject_data.py`)
-2. Ensure your data loaders (`h5_data_reader.py`, `subject_data.py`) conform to your dataset format
-
-### Model Architecture
-1. Focus on `masked_tf_model.py` for core BrainBERT architecture changes
-2. Adjust configurations in `/conf/model/`
-
-### Preprocessing & Datasets
-1. If adding new signal types or transforms, modify `/preprocessors`
-2. For new training tasks or downstream datasets, create or adjust classes in `/datasets`
-
-## Getting Started
-
-### Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### Set Up Data
-Configure and run `create_data_dirs.py` and other data scripts as per your needs.
-
-### Configure Hydra
-Adjust `/conf` files for your training setup, data paths, and model parameters.
-
-### Run Training
+### Configuration (`/conf`)
+Centralized configuration using Hydra for models, data, and experiments.
 ```bash
 python run_train.py +exp=spec2vec +model=masked_tf_model_large
 ```
 
-### Testing & Validation
-```bash
-python run_tests.py
-```
+### Data Processing (`/data`)
+Pipeline for converting ECoG recordings from EDF to HDF5 format.
+- **Core Processing:** `edf2h5.py`, `h5_data.py`, `trial_data.py`
+- **Author-Specific:** `corrupted_elec.json`, `test_split_trials.json`
 
-## Best Practices
-1. Keep all configuration in `/conf`
-2. Test changes using `/testing`
-3. Document changes and configurations clearly
-4. For performance optimizations, utilize caching and consider in-memory datasets
-5. Validate data quality and monitor model performance regularly
+### Datasets (`/datasets`)
+Model-ready dataset implementations.
+- `base_tf_dataset.py`: Base dataset architecture
+- `masked_tf_dataset.py`: Self-supervised pretraining
+- `finetuning_datasets.py`: Task-specific datasets
 
-This streamlined structure should help you quickly navigate the repository, identify author-specific components, and understand which parts to modify when extending BrainBERT.
+### Models (`/models`)
+Core BrainBERT implementations.
+- `masked_tf_model.py`: Main transformer model
+- `base_model.py`: Base model interface
+- `transformer_encoder_input.py`: ECoG encoder
+
+### Preprocessors (`/preprocessors`)
+Signal transformation utilities.
+- Time-frequency: `stft.py`, `morelet_preprocessor.py`
+- Raw signal: `wav_preprocessor.py`
+
+### Training Components
+
+#### Criterions (`/criterions`)
+Loss functions for different training objectives.
+- `pretrain_masked_criterion.py`: Masked pretraining
+- `finetune_criterion.py`: Fine-tuning
+- `feature_extract_criterion.py`: Feature extraction
+
+#### Tasks (`/tasks`)
+Training task implementations.
+- `spec_pretrain.py`: Spectrogram pretraining
+- `finetune_task.py`: Fine-tuning
+- `feature_extract_task.py`: Feature extraction
+
+#### Schedulers (`/schedulers`)
+Learning rate optimization strategies.
+- `ramp_up.py`: Warmup and step-down scheduling
+- `reduce_on_plateau.py`: Plateau-based reduction
+
+### Analysis & Testing
+
+#### Testing (`/testing`)
+Model evaluation and analysis tools.
+- **Model Analysis:** `effective_dimensionality.py`, `collect_dataset_stats.py`
+- **Few-shot Learning:** `run_fewshot_training_tests.py`, `select_fewshot_learning_electrode.py`
+
+#### Utilities (`/util`)
+Core functionality used across the codebase.
+- `mask_utils.py`: Self-supervised masking strategies
+- `tensorboard_utils.py`: Training visualization
+
+### Clinical Applications (`/seizure`)
+Seizure detection tools and analysis.
+- **Pipeline:** `preprocess_edf_pipeline.py`, `create_labels.py`
+- **Analysis:** `train_brainbert_logreg.py`, `predict_seizures_from_edf.ipynb`
+
+### Examples (`/notebooks`)
+Interactive demonstrations and tutorials.
+- `demo.ipynb`: Basic usage examples
+- Example data for testing
+
+## Extending BrainBERT
+
+### 1. Data Integration
+1. Replace author-specific files with your dataset configuration
+2. Adapt data loaders to your format
+3. Configure preprocessing pipeline
+
+### 2. Model Customization
+1. Extend `masked_tf_model.py` for architecture changes
+2. Create custom criterion if needed
+3. Configure model parameters in `/conf/model/`
+
+### 3. Training Setup
+1. Create new task by extending `base_task.py`
+2. Implement custom learning rate schedule if needed
+3. Configure training parameters
+
+### 4. Analysis & Validation
+1. Add test scripts for your use case
+2. Implement custom masking strategies if needed
+3. Create analysis scripts for validation
+
+## Quick Start
+
+1. **Setup**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Data Preparation**
+   - Configure paths in `/conf/data/`
+   - Run `create_data_dirs.py`
+
+3. **Training**
+   ```bash
+   python run_train.py +exp=spec2vec +model=masked_tf_model_large
+   ```
+
+4. **Validation**
+   ```bash
+   python run_tests.py
+   ```
+
