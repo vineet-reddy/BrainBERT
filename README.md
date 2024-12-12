@@ -1,60 +1,137 @@
-# Seizure Detection Pipeline with BrainBERT
+# BrainBERT
 
-This repository contains a modified version of the BrainBERT model, fine-tuned for seizure detection. The original BrainBERT model can be found [here](https://github.com/czlwang/BrainBERT). This is the [link to the original BrainBERT paper](https://arxiv.org/abs/2302.14367).
+BrainBERT is an modeling approach for learning self-supervised representations of intracranial electrode data. See [paper](https://arxiv.org/abs/2302.14367) for details.
 
+We provide the training pipeline below.
 
-The `seizure` folder includes scripts for processing Stereo-Electroencephalography (sEEG) data, generating embeddings, and training a logistic regression model to detect seizures.
+The trained weights have been released (see below) and pre-training data is available upon request.
 
-***Please note that this project is a work in progress!***
+## Installation
+Requirements:
+- pytorch >= 1.12.1
+- [pytorch gradual warmup scheduler](https://github.com/ildoonet/pytorch-gradual-warmup-lr)
 
-## Pipeline Overview
+```
+pip install -r requirements.txt
+```
 
-1. **Process sEEG data**: Extract relevant channels, filter data, and create 5-second epochs.
-2. **Generate labels**: Label epochs as seizure or non-seizure based on event files.
-3. **Generate embeddings**: Use BrainBERT to generate embeddings from sEEG data.
-4. **Train and evaluate model**: Use logistic regression to classify embeddings and assess performance.
+## Criterions
 
-## Scripts
+The `criterions` package provides loss functions for different training stages:
 
-### 1. Demo Notebook
-**File:** `demo_brainbert_annot.ipynb`
+- `baseline_criterion`: Binary classification (BCE loss)
+- `feature_extract_criterion`: Feature extraction for audio classification
+- `finetune_criterion`: Model fine-tuning
+- `pretrain_masked_criterion`: Masked pretraining (used in main pipeline)
+- `seeg_wav2vec_criterion`: Wav2Vec-style SEEG processing
 
-- This notebook is an updated and re-annotated version of the original demo notebook located at `BrainBERT/notebooks/demo.ipynb`. It performs the following tasks:
-  - Loads the BrainBERT model.
-  - Converts sEEG data into spectrograms using the Short-Time Fourier Transform (STFT).
-  - Generates embeddings from the spectrograms and saves both the embeddings and their corresponding labels.
+Usage in training configs:
+```yaml
+# config.yaml
+criterion:
+  type: pretrain_masked_criterion  # or other criterion name
+  # criterion-specific settings here
+```
 
-### 2. SEEG Data Processing
-**File:** `preprocess_edf_pipeline.ipynb`
+### Input
+It is expected that the input is intracranial electrode data that has been Laplacian re-referenced.
 
-- Filters sEEG channels, removes artifacts, and resamples to 256 Hz.
-- Applies notch filter to remove 60 Hz noise.
-- Segments data into 5-second epochs.
-- Saves processed data as `.npy` files.
+## Using BrainBERT embeddings
+- pretrained weights are available [here](https://drive.google.com/file/d/14ZBOafR7RJ4A6TsurOXjFVMXiVH6Kd_Q/view?usp=sharing)
+- see `notebooks/demo.ipynb` for an example input and example embedding
 
-### 3. Label Creation
-**File:** `create_labels.ipynb`
+## Data Processing Utilities
 
-- Reads event files for seizure onset/offset.
-- Labels 5-second epochs (1 for seizure, 0 for non-seizure).
+The `data` folder contains a comprehensive pipeline for processing intracranial electrode (ECoG) data:
 
-### 4. Logistic Regression Model Training
-**File:** `train_brainbert_logreg.ipynb`
+### Core Data Classes
+- `subject_data.py`: Base class for handling subject-specific data
+- `trial_data.py` and `trial_data_reader.py`: Core classes for reading and processing trial data
+  - Handles data loading, filtering, and preprocessing
+  - Supports different referencing methods including Laplacian
+- `electrode_subject_data.py`: Manages electrode-specific data and metadata
+- `timestamped_subject_data.py`: Handles time-aligned neural recordings
+- `speech_nonspeech_subject_data.py`: Specialized classes for:
+  - `NonLinguisticSubjectData`: Processing non-linguistic neural data
+  - `SentenceOnsetSubjectData`: Handling sentence onset-related data
 
-- Loads BrainBERT embeddings and labels.
-- Splits data into training/testing sets.
-- Trains and saves the logistic regression model.
+### Data Format and Storage
+- `edf2h5.py`: Converts EDF (European Data Format) neurophysiological data to HDF5
+- `h5_data.py` and `h5_data_reader.py`: Tools for HDF5 data management
+  - Supports frequency filtering
+  - Handles data chunking and caching
+- `write_data_to_disk.py`: General-purpose data writing utility
+- `write_preprocessed_inputs.py`: Prepares preprocessed data for model input
+- `write_pretrain_data_wavs.py`: Converts neural data to wav format for pretraining
 
-### 5. Model Evaluation and Visualization
-**File:** `brainbert_embed_logreg_analysis.ipynb`
+### Data Processing Tools
+- `electrode_selection.py`: 
+  - Identifies and validates Laplacian electrode configurations
+  - Filters out corrupted or problematic electrodes
+- `throw_out_zeros.py`: Removes zero-value or invalid data segments
+- `make_aligned_data_caches.py`: Creates time-aligned data caches for efficient processing
+- `modify_manifest.py`: Updates data manifests for different preprocessing configurations
 
-- Evaluates model performance on the test set.
-- Generates confusion matrix and ROC curve.
+### Data Organization
+- `create_data_dirs.py`: Sets up the required directory structure
+- Configuration files:
+  - `corrupted_elec.json`: Lists problematic electrodes to exclude
+  - `test_split_trials.json`: Defines train/test split configurations
 
-## Results
+### Usage
 
-Running the evaluation script provides:
+1. Initial Setup:
+```bash
+# Create directory structure
+python3 -m data.create_data_dirs +data=pretraining +hydra.job.chdir=False
+```
 
-- Model accuracy on training and test sets.
-- Confusion matrix for classification performance.
-- ROC curve for assessing model's seizure detection ability.
+2. Data Conversion:
+```bash
+# Convert EDF files to HDF5
+python3 -m data.edf2h5 [options]
+
+# Write preprocessed data
+python3 -m data.write_preprocessed_inputs +data=tf_unmasked +data_prep=cwt_to_disk
+```
+
+3. Pretraining Data Preparation:
+```bash
+# Create wav format data for pretraining
+python3 -m data.write_pretrain_data_wavs +data=pretraining_template.yaml +data_prep=write_pretrain_split
+
+# Modify manifests if needed
+python3 -m data.modify_manifest +data=pretrain_wavs_from_disk
+```
+
+4. Create Aligned Data Caches:
+```bash
+python3 -m data.make_aligned_data_caches [options]
+```
+
+The pipeline supports both linguistic and non-linguistic neural data processing, with specialized handling for speech vs. non-speech analysis. All utilities use Hydra for configuration management.
+
+## Upstream
+### BrainBERT pre-training data
+The data directory should be structured as:
+```
+/pretrain_data
+  |_manifests
+    |_manifests.tsv  <-- each line contains the path to the example and the length
+  |_<subject>
+    |_<trial>
+      |_<example>.npy
+```
+
+### BrainBERT pre-training
+```
+python3 run_train.py +exp=spec2vec ++exp.runner.device=cuda ++exp.runner.multi_gpu=True \
+  ++exp.runner.num_workers=64 +data=masked_spec +model=masked_tf_model_large \
+  +data.data=/path/to/data ++data.val_split=0.01 +task=fixed_mask_pretrain.yaml \
+  +criterion=pretrain_masked_criterion +preprocessor=stft ++data.test_split=0.01 \
+  ++task.freq_mask_p=0.05 ++task.time_mask_p=0.05 ++exp.runner.total_steps=500000
+```
+Example parameters:
+```
+/path/to/data = /storage/user123/self_supervised_seeg/pretrain_data/manifests
+```
