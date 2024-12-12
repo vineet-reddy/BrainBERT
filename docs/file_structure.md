@@ -22,10 +22,49 @@ Model-ready dataset implementations.
 - `finetuning_datasets.py`: Task-specific datasets
 
 ### Models (`/models`)
-Core BrainBERT implementations.
-- `masked_tf_model.py`: Main transformer model
-- `base_model.py`: Base model interface
-- `transformer_encoder_input.py`: Input encoder
+Core model implementations and architectures.
+
+**Primary BrainBERT Implementation:**
+- `masked_tf_model.py`: Main BrainBERT transformer model
+  - Core self-supervised learning implementation
+  - Handles sequence processing and attention mechanisms
+  - Supports intermediate representation extraction
+  - **This is the primary model to use**
+
+**Base Classes:**
+- `base_model.py`: Abstract base class for all models
+  - Defines common interface and weight management
+  - Implements save/load functionality
+
+- `transformer_encoder_input.py`: Input encoding layer
+  - Transforms raw/preprocessed signals into embeddings
+  - Handles positional encoding and dimensionality
+
+**Alternative Implementations:**
+- `seeg_wav2vec.py`: Wave2Vec-style model (Experimental)
+  - Alternative approach using contrastive learning
+  - Specifically for SEEG signals
+  - Currently experimental, prefer `masked_tf_model.py`
+
+**Feature Extraction:**
+- `feature_extract_model.py`: Base feature extractor
+- `feature_extract_deep_model.py`: Deep network extractor
+  - Used for extracting learned representations
+- `feature_extract_hidden.py`: Hidden layer extraction
+
+**Components:**
+- `spec_prediction_head.py`: Prediction head for spectrogram tasks
+- `finetune_model.py`: Fine-tuning model adaptations
+
+**Deprecated Models:**
+*These models were used in early experiments and are no longer maintained:*
+- `linear_wav_baseline.py`: Simple linear baseline
+- `linear_spec_baseline.py`: Spectrogram baseline
+- `deep_linear_wav_baseline.py`: Deep linear baseline
+- `hidden_linear_wav_model.py`: Hidden layer model
+
+**Registration:**
+- `__init__.py`: Model registry and factory methods
 
 ### Preprocessors (`/preprocessors`)
 Signal transformation utilities.
@@ -115,4 +154,3 @@ Interactive demonstrations and tutorials.
    ```bash
    python run_tests.py
    ```
-
