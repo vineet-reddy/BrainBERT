@@ -11,7 +11,7 @@ python run_train.py +exp=spec2vec +model=masked_tf_model_large
 ```
 
 ### Data Processing (`/data`)
-Pipeline for converting ECoG recordings from EDF to HDF5 format.
+Pipeline for converting intracranial recordings from EDF to HDF5 format.
 - **Core Processing:** `edf2h5.py`, `h5_data.py`, `trial_data.py`
 - **Author-Specific:** `corrupted_elec.json`, `test_split_trials.json`
 
@@ -25,7 +25,7 @@ Model-ready dataset implementations.
 Core BrainBERT implementations.
 - `masked_tf_model.py`: Main transformer model
 - `base_model.py`: Base model interface
-- `transformer_encoder_input.py`: ECoG encoder
+- `transformer_encoder_input.py`: Input encoder
 
 ### Preprocessors (`/preprocessors`)
 Signal transformation utilities.
