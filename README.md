@@ -1,88 +1,81 @@
 # BrainBERT
 
+[![Paper](https://img.shields.io/badge/paper-arxiv-b31b1b)](https://arxiv.org/abs/2302.14367)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyTorch](https://img.shields.io/badge/pytorch-1.12.1+-ee4c2c.svg)](https://pytorch.org/get-started/locally/)
+
 BrainBERT is an modeling approach for learning self-supervised representations of intracranial electrode data. See [paper](https://arxiv.org/abs/2302.14367) for details.
 
-We provide the training pipeline below.
+## Quick Start
 
-The trained weights have been released (see below) and pre-training data is available upon request.
+### Prerequisites
+- PyTorch >= 1.12.1
+- [PyTorch Gradual Warmup Scheduler](https://github.com/ildoonet/pytorch-gradual-warmup-lr)
 
-## Installation
-Requirements:
-- pytorch >= 1.12.1
-- [pytorch gradual warmup scheduler](https://github.com/ildoonet/pytorch-gradual-warmup-lr)
-
-```
+### Installation
+```bash
+git clone https://github.com/your-username/BrainBERT.git
+cd BrainBERT
 pip install -r requirements.txt
 ```
 
-## Criterions
+### Using Pre-trained Models
+1. Download pre-trained weights from [here](https://drive.google.com/file/d/14ZBOafR7RJ4A6TsurOXjFVMXiVH6Kd_Q/view?usp=sharing)
+2. See `notebooks/demo.ipynb` for example usage
 
-The `criterions` package provides loss functions for different training stages:
+## Core Features
 
-- `baseline_criterion`: Binary classification (BCE loss)
-- `feature_extract_criterion`: Feature extraction for audio classification
-- `finetune_criterion`: Model fine-tuning
-- `pretrain_masked_criterion`: Masked pretraining (used in main pipeline)
-- `seeg_wav2vec_criterion`: Wav2Vec-style SEEG processing
+### 1. Neural Data Processing
+- Supports multiple neural data formats (EDF, HDF5)
+- Built-in preprocessing pipeline for intracranial recordings
+- Automatic electrode validation and artifact removal
+- Laplacian re-referencing support
 
-Usage in training configs:
-```yaml
-# config.yaml
-criterion:
-  type: pretrain_masked_criterion  # or other criterion name
-  # criterion-specific settings here
+### 2. Model Architecture
+- Transformer-based architecture optimized for neural signals
+- Multiple training objectives:
+  - Masked pretraining (primary pipeline)
+  - Binary classification
+  - Feature extraction
+  - Fine-tuning
+  - Wav2Vec-style processing
+
+### 3. Seizure Detection Pipeline
+Our specialized seizure detection pipeline leverages BrainBERT's neural representations for clinical applications.
+
+#### Pipeline Steps
+1. **Data Processing**: 
+   - Extract and filter sEEG channels
+   - Create 5-second epochs
+   - Apply artifact removal and 60Hz notch filter
+   - Resample to 256 Hz
+
+2. **Feature Extraction**:
+   - Convert epochs to spectrograms
+   - Generate BrainBERT embeddings
+   - Create seizure/non-seizure labels
+
+3. **Model Training**:
+   - Train logistic regression classifier
+   - Generate performance metrics
+   - Visualize results (ROC curves, confusion matrices)
+
+#### Key Components
+```
+seizure/
+├── notebooks/
+│   ├── preprocess_edf_pipeline.ipynb     # Data preprocessing
+│   ├── create_labels.ipynb               # Label generation
+│   ├── train_brainbert_logreg.ipynb      # Model training
+│   └── brainbert_embed_logreg_analysis.ipynb  # Analysis
+└── README.md
 ```
 
-### Input
-It is expected that the input is intracranial electrode data that has been Laplacian re-referenced.
+## Development
 
-## Using BrainBERT embeddings
-- pretrained weights are available [here](https://drive.google.com/file/d/14ZBOafR7RJ4A6TsurOXjFVMXiVH6Kd_Q/view?usp=sharing)
-- see `notebooks/demo.ipynb` for an example input and example embedding
-
-## Data Processing Utilities
-
-The `data` folder contains a comprehensive pipeline for processing intracranial electrode (ECoG) data:
-
-### Core Data Classes
-- `subject_data.py`: Base class for handling subject-specific data
-- `trial_data.py` and `trial_data_reader.py`: Core classes for reading and processing trial data
-  - Handles data loading, filtering, and preprocessing
-  - Supports different referencing methods including Laplacian
-- `electrode_subject_data.py`: Manages electrode-specific data and metadata
-- `timestamped_subject_data.py`: Handles time-aligned neural recordings
-- `speech_nonspeech_subject_data.py`: Specialized classes for:
-  - `NonLinguisticSubjectData`: Processing non-linguistic neural data
-  - `SentenceOnsetSubjectData`: Handling sentence onset-related data
-
-### Data Format and Storage
-- `edf2h5.py`: Converts EDF (European Data Format) neurophysiological data to HDF5
-- `h5_data.py` and `h5_data_reader.py`: Tools for HDF5 data management
-  - Supports frequency filtering
-  - Handles data chunking and caching
-- `write_data_to_disk.py`: General-purpose data writing utility
-- `write_preprocessed_inputs.py`: Prepares preprocessed data for model input
-- `write_pretrain_data_wavs.py`: Converts neural data to wav format for pretraining
-
-### Data Processing Tools
-- `electrode_selection.py`: 
-  - Identifies and validates Laplacian electrode configurations
-  - Filters out corrupted or problematic electrodes
-- `throw_out_zeros.py`: Removes zero-value or invalid data segments
-- `make_aligned_data_caches.py`: Creates time-aligned data caches for efficient processing
-- `modify_manifest.py`: Updates data manifests for different preprocessing configurations
-
-### Data Organization
-- `create_data_dirs.py`: Sets up the required directory structure
-- Configuration files:
-  - `corrupted_elec.json`: Lists problematic electrodes to exclude
-  - `test_split_trials.json`: Defines train/test split configurations
-
-### Usage
-
-1. Initial Setup:
+### Data Processing Pipeline
 ```bash
-# Create directory structure
+# Set up directory structure
 python3 -m data.create_data_dirs +data=pretraining +hydra.job.chdir=False
 ```
 
