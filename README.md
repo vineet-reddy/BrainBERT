@@ -52,39 +52,6 @@ seizure/
 └── README.md
 ```
 
-## Development
-
-### Data Processing Pipeline
-```bash
-# Set up directory structure
-python3 -m data.create_data_dirs +data=pretraining +hydra.job.chdir=False
-```
-
-2. Data Conversion:
-```bash
-# Convert EDF files to HDF5
-python3 -m data.edf2h5 [options]
-
-# Write preprocessed data
-python3 -m data.write_preprocessed_inputs +data=tf_unmasked +data_prep=cwt_to_disk
-```
-
-3. Pretraining Data Preparation:
-```bash
-# Create wav format data for pretraining
-python3 -m data.write_pretrain_data_wavs +data=pretraining_template.yaml +data_prep=write_pretrain_split
-
-# Modify manifests if needed
-python3 -m data.modify_manifest +data=pretrain_wavs_from_disk
-```
-
-4. Create Aligned Data Caches:
-```bash
-python3 -m data.make_aligned_data_caches [options]
-```
-
-The pipeline supports both linguistic and non-linguistic neural data processing, with specialized handling for speech vs. non-speech analysis. All utilities use Hydra for configuration management.
-
 ## Upstream
 ### BrainBERT pre-training data
 The data directory should be structured as:
