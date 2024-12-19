@@ -13,9 +13,7 @@ BrainBERT is an modeling approach for learning self-supervised representations o
 - [PyTorch Gradual Warmup Scheduler](https://github.com/ildoonet/pytorch-gradual-warmup-lr)
 
 ### Installation
-```bash
-git clone https://github.com/your-username/BrainBERT.git
-cd BrainBERT
+```
 pip install -r requirements.txt
 ```
 
