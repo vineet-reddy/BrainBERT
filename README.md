@@ -21,27 +21,10 @@ pip install -r requirements.txt
 1. Download pre-trained weights from [here](https://drive.google.com/file/d/14ZBOafR7RJ4A6TsurOXjFVMXiVH6Kd_Q/view?usp=sharing)
 2. See `notebooks/demo.ipynb` for example usage
 
-## Core Features
-
-### 1. Neural Data Processing
-- Supports multiple neural data formats (EDF, HDF5)
-- Built-in preprocessing pipeline for intracranial recordings
-- Automatic electrode validation and artifact removal
-- Laplacian re-referencing support
-
-### 2. Model Architecture
-- Transformer-based architecture optimized for neural signals
-- Multiple training objectives:
-  - Masked pretraining (primary pipeline)
-  - Binary classification
-  - Feature extraction
-  - Fine-tuning
-  - Wav2Vec-style processing
-
-### 3. Seizure Detection Pipeline
+## Seizure Detection Pipeline
 Our specialized seizure detection pipeline leverages BrainBERT's neural representations for clinical applications.
 
-#### Pipeline Steps
+### Pipeline Steps
 1. **Data Processing**: 
    - Extract and filter sEEG channels
    - Create 5-second epochs
