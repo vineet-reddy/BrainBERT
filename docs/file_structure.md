@@ -13,7 +13,7 @@ python run_train.py +exp=spec2vec +model=masked_tf_model_large
 ### Data Processing (`/data`)
 Pipeline for converting intracranial recordings from EDF to HDF5 format.
 - **Core Processing:** `edf2h5.py`, `h5_data.py`, `trial_data.py`
-- **Author-Specific:** `corrupted_elec.json`, `test_split_trials.json`
+- **Author-Specific-Data:** `corrupted_elec.json`, `test_split_trials.json`
 
 ### Datasets (`/datasets`)
 Model-ready dataset implementations.
@@ -67,9 +67,48 @@ Core model implementations and architectures.
 - `__init__.py`: Model registry and factory methods
 
 ### Preprocessors (`/preprocessors`)
-Signal transformation utilities.
-- Time-frequency: `stft.py`, `morelet_preprocessor.py`
-- Raw signal: `wav_preprocessor.py`
+Signal transformation utilities that convert raw intracranial EEG data into structured representations for neural models. Each preprocessor transforms continuous voltage signals into sequences of time-frequency "frames" that serve as input tokens.
+
+**Core Preprocessors:**
+- `stft.py`: Short-Time Fourier Transform preprocessor
+  - Computes spectrograms using sliding windows
+  - Configurable window size and overlap
+  - Provides consistent frequency resolution
+  - Outputs time x frequency matrices
+
+- `morelet_preprocessor.py`: Morlet Wavelet Transform
+  - Uses Morlet wavelets for adaptive time-frequency decomposition
+  - Better handles transient oscillations
+  - Improved low-frequency resolution
+  - Outputs smooth frequency-domain representations
+
+- `superlet_preprocessor.py`: Superlet Transform (Based on Moca et al., 2021)
+  - Advanced wavelet-based approach combining multiple cycle counts
+  - Achieves high frequency resolution while maintaining temporal precision
+  - Ideal for capturing subtle neurophysiological events
+  - Produces high-quality embeddings for self-supervised tasks
+
+- `wav_preprocessor.py`: Raw Waveform Processing
+  - Direct processing of time-domain signals
+  - Suitable for models with learned front-ends
+  - Used for baseline comparisons and specific architectures
+
+**Advanced Preprocessors:**
+- `spec_pooled.py`: Pooled Spectrogram Preprocessor
+  - Combines spectrogram preprocessing with temporal pooling
+  - Takes the mean of a window around the middle timepoint
+  - Useful for fixed-length feature extraction
+
+- `spec_pretrained.py`: Pretrained Spectrogram Preprocessor
+  - Combines spectrogram preprocessing with a pretrained transformer
+  - Loads weights from a pretrained BrainBERT checkpoint
+  - Extracts learned features from spectrograms
+
+**Key Features:**
+- Converts continuous signals into fixed-length embeddings
+- Preserves both temporal and spectral information
+- Facilitates self-supervised training through maskable frames
+- Configurable parameters for resolution trade-offs
 
 ### Training Components
 
